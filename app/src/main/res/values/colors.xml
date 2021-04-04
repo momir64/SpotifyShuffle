@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="green">#FF1DB954</color>
+    <color name="gray_100">#FF212121</color>
+    <color name="gray_200">#FF18181A</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="card_color">#FF303030</color>
+    <color name="card_color_selected">#FF484848</color>
+    <color name="dots_color">#FF666666</color>
+</resources>

@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Spotify Shuffle</string>
+    <string name="song_name">Song</string>
+    <string name="album_art">Album art</string>
+    <string name="fab">fab</string>
+    <string name="dragging_dots">Dragging dots</string>
+    <string name="playlist_name">Playlist</string>
+    <string name="log_in">Log in to spotify</string>
+    <string name="connect_string"><![CDATA[Connect <b>SpotifyShuffle</b> to your Spotify account.]]></string>
+    <string name="playlists">Playlists</string>
+    <string name="song_artist">Artist</string>
+    <string name="back">Back</string>
+    <string name="shuffle">Shuffle</string>
+    <string name="done">Done</string>
+    <string name="delete">Delete</string>
+</resources>
