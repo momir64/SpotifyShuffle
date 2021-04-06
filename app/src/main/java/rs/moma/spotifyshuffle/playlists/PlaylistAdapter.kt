@@ -11,7 +11,7 @@ import rs.moma.spotifyshuffle.*
 import rs.moma.spotifyshuffle.songs.SongActivity
 
 
-class PlaylistAdapter(private val playlistList: ArrayList<Playlist>, private val activity: PlaylistActivity) : RecyclerView.Adapter<PlaylistViewHolder>() {
+class PlaylistAdapter(val playlistList: ArrayList<Playlist>, private val activity: PlaylistActivity) : RecyclerView.Adapter<PlaylistViewHolder>() {
     override fun getItemCount() = playlistList.size
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaylistViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_playlist, parent, false)
@@ -20,11 +20,6 @@ class PlaylistAdapter(private val playlistList: ArrayList<Playlist>, private val
 
     override fun onBindViewHolder(holder: PlaylistViewHolder, position: Int) {
         holder.bindData(playlistList[position], activity)
-    }
-
-    fun addPlaylists(playlists: ArrayList<Playlist>) {
-        playlistList.addAll(playlists)
-        notifyItemRangeInserted(itemCount - playlists.size, playlists.size)
     }
 }
 

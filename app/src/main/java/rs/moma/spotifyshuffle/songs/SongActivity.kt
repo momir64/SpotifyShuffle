@@ -6,10 +6,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import rs.moma.spotifyshuffle.*
 import rs.moma.spotifyshuffle.global.*
 import java.util.Collections.shuffle
+
 
 class SongActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
@@ -40,7 +44,34 @@ class SongActivity : AppCompatActivity() {
     }
 
     private fun updateSongs(songAdapter: SongAdapter) {
-
+        selectable = false
+        for (i in songAdapter.songList.indices)
+            songAdapter.notifyItemChanged(i)
+        Thread {
+            var offset = 0
+            while (offset < songAdapter.songList.size) {
+                val url = "https://api.spotify.com/v1/playlists/${intent.extras?.getString("playlistId")!!}/tracks"
+                val list = ArrayList<String>()
+                for (i in offset until (offset + 100).coerceAtMost(songAdapter.songList.size))
+                    list.add(songAdapter.songList[i].uri)
+                val body = JSONObject().put("uris", JSONArray(list)).toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+                val request = Request.Builder()
+                    .url(url)
+                    .addHeader("Authorization", "Bearer " + getToken(this@SongActivity))
+                if (offset == 0)
+                    request.put(body)
+                else
+                    request.post(body)
+                val response = OkHttpClient().newCall(request.build()).execute()
+                runOnUiThread {
+                    if (response.isSuccessful)
+                        showToast("Successfully updated", this@SongActivity)
+                    else
+                        showToast("Error occurred", this@SongActivity)
+                }
+                offset += 100
+            }
+        }.start()
     }
 
     private fun deleteSelected(songAdapter: SongAdapter) {
@@ -93,7 +124,7 @@ class SongActivity : AppCompatActivity() {
                                     artist += ", " + artists.getJSONObject(j).getString("name")
                                 val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
                                 songs.add(Song(i + 1 + step * 100,
-                                               track.getString("id"),
+                                               track.getString("uri"),
                                                track.getString("name"),
                                                artist,
                                                image))

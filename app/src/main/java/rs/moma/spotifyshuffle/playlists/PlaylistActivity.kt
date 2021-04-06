@@ -2,12 +2,14 @@ package rs.moma.spotifyshuffle.playlists
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.*
-import okhttp3.*
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONObject
 import rs.moma.spotifyshuffle.PreCachingLayoutManager
 import rs.moma.spotifyshuffle.R
-import rs.moma.spotifyshuffle.global.*
+import rs.moma.spotifyshuffle.global.getToken
 
 
 class PlaylistActivity : AppCompatActivity() {
@@ -26,7 +28,13 @@ class PlaylistActivity : AppCompatActivity() {
         loadPlaylists(playlistAdapter)
     }
 
-    private fun loadPlaylists(playlistAdapter: PlaylistAdapter) {
+    override fun onResume() {
+        playlistAdapter.playlistList.clear()
+        loadPlaylists(playlistAdapter, false)
+        super.onResume()
+    }
+
+    private fun loadPlaylists(playlistAdapter: PlaylistAdapter, notify: Boolean = true) {
         Thread {
             var url = "https://api.spotify.com/v1/me/playlists?limit=50"
             do {
@@ -51,11 +59,17 @@ class PlaylistActivity : AppCompatActivity() {
                             }
                         }
                     }
-                }
-                runOnUiThread {
-                    playlistAdapter.addPlaylists(playlists)
+                    playlistAdapter.playlistList.addAll(playlists)
+                    runOnUiThread {
+                        if (notify)
+                            playlistAdapter.notifyItemRangeInserted(playlistAdapter.itemCount - playlists.size, playlists.size)
+                    }
                 }
             } while (url != "null")
+            runOnUiThread {
+                if (!notify)
+                    playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.playlistList.size)
+            }
         }.start()
     }
 }
