@@ -82,7 +82,6 @@ class SongActivity : AppCompatActivity() {
                 if (songList[i].selected) {
                     songList.removeAt(i)
                     notifyItemRemoved(i)
-                    deletedSongs++
                 } else {
                     notifyItemChanged(i)
                     i++

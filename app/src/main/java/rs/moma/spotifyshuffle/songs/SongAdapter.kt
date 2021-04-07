@@ -15,7 +15,6 @@ import kotlin.collections.ArrayList
 var selectable = false
 
 class SongAdapter(val songList: ArrayList<Song>, private val activity: SongActivity) : RecyclerView.Adapter<SongViewHolder>() {
-    var deletedSongs = 0
     override fun getItemCount() = songList.size
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_song, parent, false)
