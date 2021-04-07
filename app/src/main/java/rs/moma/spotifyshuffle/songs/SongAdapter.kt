@@ -74,9 +74,13 @@ class SongViewHolder(songView: View) : RecyclerView.ViewHolder(songView) {
             }
         }
         songCard.setOnLongClickListener {
-            selectable = true
-            song.selected = !song.selected
-            activity.songAdapter.notifyDataSetChanged()
+            if (selectable) {
+                song.selected = !song.selected
+                songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (song.selected) R.color.card_color_selected else R.color.card_color))
+            } else {
+                selectable = true
+                activity.songAdapter.notifyItemRangeChanged(0, songList.size)
+            }
             true
         }
         dragDots.setOnTouchListener { _, event ->

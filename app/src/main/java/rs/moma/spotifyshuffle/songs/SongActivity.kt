@@ -37,7 +37,7 @@ class SongActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.delete_button).setOnClickListener { deleteSelected(songAdapter) }
         findViewById<ImageButton>(R.id.shuffle_button).setOnClickListener {
             shuffle(songAdapter.songList)
-            songAdapter.notifyDataSetChanged()
+            songAdapter.notifyItemRangeChanged(0, songAdapter.itemCount)
             recyclerView.scrollToPosition(0)
         }
         findViewById<FloatingActionButton>(R.id.done_button).setOnClickListener { updateSongs(songAdapter) }
@@ -94,7 +94,7 @@ class SongActivity : AppCompatActivity() {
     override fun onBackPressed() {
         if (selectable) {
             selectable = false
-            songAdapter.notifyDataSetChanged()
+            songAdapter.notifyItemRangeChanged(0, songAdapter.itemCount)
         } else
             super.onBackPressed()
     }
