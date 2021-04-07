@@ -1,101 +1,67 @@
 package rs.moma.spotifyshuffle.songs
 
-import android.annotation.SuppressLint
 import android.view.*
 import android.view.View.*
 import android.widget.*
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.ernestoyaquello.dragdropswiperecyclerview.DragDropSwipeAdapter
 import rs.moma.spotifyshuffle.*
-import java.util.*
 import kotlin.collections.ArrayList
 
 var selectable = false
 
-class SongAdapter(val songList: ArrayList<Song>, private val activity: SongActivity) : RecyclerView.Adapter<SongViewHolder>() {
-    override fun getItemCount() = songList.size
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_song, parent, false)
-        return SongViewHolder(view)
+class SongAdapter(val songList: ArrayList<Song>, private val activity: SongActivity) : DragDropSwipeAdapter<Song, SongAdapter.SongViewHolder>(songList) {
+    class SongViewHolder(songView: View) : DragDropSwipeAdapter.ViewHolder(songView) {
+        var songImage: ImageView = songView.findViewById(R.id.song_image)
+        var dragDots: ImageView = songView.findViewById(R.id.drag_dots)
+        var songCard: CardView = songView.findViewById(R.id.song_card)
+        var songArtist: TextView = songView.findViewById(R.id.song_artist)
+        var songTitle: TextView = songView.findViewById(R.id.song_title)
+        var songNum: TextView = songView.findViewById(R.id.song_num)
     }
 
-    override fun onBindViewHolder(holder: SongViewHolder, position: Int) {
-        holder.bindData(songList, songList[position], activity)
-    }
-
-    fun addSongs(songs: ArrayList<Song>) {
-        songList.addAll(songs)
-        notifyItemRangeInserted(itemCount - songs.size, songs.size)
-    }
-
-    fun swapSongs(from: Int, to: Int) {
-        Collections.swap(songList, from, to)
-        notifyItemMoved(from, to)
-    }
-}
-
-class SongViewHolder(songView: View) : RecyclerView.ViewHolder(songView) {
-    private var songImage = songView.findViewById<ImageView>(R.id.song_image)
-    private var dragDots = songView.findViewById<ImageView>(R.id.drag_dots)
-    private var songCard = songView.findViewById<CardView>(R.id.song_card)
-    private var songArtist = songView.findViewById<TextView>(R.id.song_artist)
-    private var songTitle = songView.findViewById<TextView>(R.id.song_title)
-    private var songNum = songView.findViewById<TextView>(R.id.song_num)
-
-    @SuppressLint("ClickableViewAccessibility")
-    fun bindData(songList: ArrayList<Song>, song: Song, activity: SongActivity) {
-        if (selectable) {
-            dragDots.visibility = VISIBLE
-            songNum.visibility = INVISIBLE
-            activity.findViewById<ImageButton>(R.id.delete_button).visibility = VISIBLE
-            activity.findViewById<ImageButton>(R.id.shuffle_button).visibility = INVISIBLE
-        } else {
-            for (i in songList.indices) {
-                songList[i].num = i + 1
-                songList[i].selected = false
-            }
-            dragDots.visibility = INVISIBLE
-            songNum.visibility = VISIBLE
-            activity.findViewById<ImageButton>(R.id.delete_button).visibility = INVISIBLE
-            activity.findViewById<ImageButton>(R.id.shuffle_button).visibility = VISIBLE
-            songNum.text = song.num.toString()
-        }
-        songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (song.selected) R.color.card_color_selected else R.color.card_color))
-        Glide.with(activity).load(song.imageUrl).placeholder(R.drawable.ic_placeholder).into(songImage)
-        songTitle.text = song.title
-        songArtist.text = song.artist
-        songCard.setOnClickListener {
+    override fun getViewHolder(itemView: View): SongViewHolder = SongViewHolder(itemView)
+    override fun getViewToTouchToStartDraggingItem(item: Song, viewHolder: SongViewHolder, position: Int): View = viewHolder.dragDots
+    override fun onBindViewHolder(item: Song, viewHolder: SongViewHolder, position: Int) {
+        with(viewHolder) {
             if (selectable) {
-                song.selected = !song.selected
-                songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (song.selected) R.color.card_color_selected else R.color.card_color))
-            }
-        }
-        songCard.setOnLongClickListener {
-            if (selectable) {
-                song.selected = !song.selected
-                songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (song.selected) R.color.card_color_selected else R.color.card_color))
+                dragDots.visibility = VISIBLE
+                songNum.visibility = INVISIBLE
+                activity.findViewById<ImageButton>(R.id.delete_button).visibility = VISIBLE
+                activity.findViewById<ImageButton>(R.id.shuffle_button).visibility = INVISIBLE
             } else {
-                selectable = true
-                activity.songAdapter.notifyItemRangeChanged(0, songList.size)
+                for (i in songList.indices) {
+                    songList[i].num = i + 1
+                    songList[i].selected = false
+                }
+                dragDots.visibility = INVISIBLE
+                songNum.visibility = VISIBLE
+                activity.findViewById<ImageButton>(R.id.delete_button).visibility = INVISIBLE
+                activity.findViewById<ImageButton>(R.id.shuffle_button).visibility = VISIBLE
+                songNum.text = item.num.toString()
             }
-            true
+            songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (item.selected) R.color.card_color_selected else R.color.card_color))
+            Glide.with(activity).load(item.imageUrl).placeholder(R.drawable.ic_placeholder).into(songImage)
+            songTitle.text = item.title
+            songArtist.text = item.artist
+            songCard.setOnClickListener {
+                if (selectable) {
+                    item.selected = !item.selected
+                    songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (item.selected) R.color.card_color_selected else R.color.card_color))
+                }
+            }
+            songCard.setOnLongClickListener {
+                if (selectable) {
+                    item.selected = !item.selected
+                    songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (item.selected) R.color.card_color_selected else R.color.card_color))
+                } else {
+                    selectable = true
+                    activity.songAdapter.notifyItemRangeChanged(0, songList.size)
+                }
+                true
+            }
         }
-        dragDots.setOnTouchListener { _, event ->
-            if (event.actionMasked == MotionEvent.ACTION_DOWN)
-                activity.songTouchHelper.startDrag(this)
-            true
-        }
-    }
-}
-
-class SongTouchHelperCallback(private val adapter: SongAdapter) : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
-    override fun isLongPressDragEnabled(): Boolean = false
-    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
-    override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-        adapter.swapSongs(viewHolder.adapterPosition, target.adapterPosition)
-        return true
     }
 }

@@ -27,12 +27,10 @@ class SongActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.back_button).setOnClickListener { onBackPressed() }
         findViewById<TextView>(R.id.playlistTitle).text = intent.extras?.getString("playlistTitle")
         recyclerView = findViewById(R.id.songs_list)
-        (recyclerView.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+//        (recyclerView.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         recyclerView.layoutManager = PreCachingLayoutManager(this)
         songAdapter = SongAdapter(ArrayList(), this)
         recyclerView.adapter = songAdapter
-        songTouchHelper = ItemTouchHelper(SongTouchHelperCallback(songAdapter))
-        songTouchHelper.attachToRecyclerView(recyclerView)
         loadSongs(songAdapter, intent.extras?.getString("playlistId")!!)
         findViewById<ImageButton>(R.id.delete_button).setOnClickListener { deleteSelected(songAdapter) }
         findViewById<ImageButton>(R.id.shuffle_button).setOnClickListener {
@@ -103,7 +101,6 @@ class SongActivity : AppCompatActivity() {
             var step = 0
             var url = "https://api.spotify.com/v1/playlists/$playlistId/tracks?market=from_token"
             do {
-                val songs = ArrayList<Song>()
                 val request = Request.Builder()
                     .addHeader("Authorization", "Bearer " + getToken(this))
                     .url(url)
@@ -122,17 +119,16 @@ class SongActivity : AppCompatActivity() {
                                 for (j in 1 until artists.length())
                                     artist += ", " + artists.getJSONObject(j).getString("name")
                                 val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
-                                songs.add(Song(i + 1 + step * 100,
-                                               track.getString("uri"),
-                                               track.getString("name"),
-                                               artist,
-                                               image))
+                                runOnUiThread {
+                                    songAdapter.addItem(Song(i + 1 + step * 100,
+                                                             track.getString("uri"),
+                                                             track.getString("name"),
+                                                             artist,
+                                                             image))
+                                }
                             }
                         }
                     }
-                }
-                runOnUiThread {
-                    songAdapter.addSongs(songs)
                 }
                 step++
             } while (url != "null")
