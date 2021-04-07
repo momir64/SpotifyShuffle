@@ -6,6 +6,7 @@ import android.view.View.*
 import android.widget.*
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import rs.moma.spotifyshuffle.*
@@ -87,5 +88,14 @@ class SongViewHolder(songView: View) : RecyclerView.ViewHolder(songView) {
                 activity.songTouchHelper.startDrag(this)
             true
         }
+    }
+}
+
+class SongTouchHelperCallback(private val adapter: SongAdapter) : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+    override fun isLongPressDragEnabled(): Boolean = false
+    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+    override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+        adapter.swapSongs(viewHolder.adapterPosition, target.adapterPosition)
+        return true
     }
 }
