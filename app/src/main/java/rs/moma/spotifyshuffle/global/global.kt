@@ -1,10 +1,13 @@
 package rs.moma.spotifyshuffle.global
 
 import android.content.Context
+import android.graphics.Rect
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.RecyclerView
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -13,6 +16,13 @@ import org.json.JSONObject
 const val preferencePath = "com.example.spotifyshuffle.my_variables"
 const val CLIENT_ID = "8edbcacd9213442a99c413fc606e057a"
 const val REDIRECT_URI = "spotifyshuffle://callback"
+
+class VerticalSpaceItemDecoration(private val mVerticalSpaceHeight: Int) : RecyclerView.ItemDecoration() {
+    override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+        if (parent.getChildAdapterPosition(view) == 0)
+            outRect.top = mVerticalSpaceHeight
+    }
+}
 
 fun getToken(context: Context): String {
     if (System.currentTimeMillis() >= getExpireTime(context)) {
