@@ -1,22 +1,17 @@
 package rs.moma.spotifyshuffle.playlists
 
-import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.util.TypedValue.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import rs.moma.spotifyshuffle.R
 import rs.moma.spotifyshuffle.global.*
-import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.concurrent.schedule
 
 class PlaylistActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
@@ -35,21 +30,13 @@ class PlaylistActivity : AppCompatActivity() {
         loadPlaylists(playlistAdapter)
     }
 
-    override fun onStart() {
-        super.onStart()
-        Timer().schedule(500) {
-            for (playlist in playlistAdapter.playlistList)
-                Glide.with(this@PlaylistActivity).load(playlist.imageUrl).diskCacheStrategy(DiskCacheStrategy.ALL).preload()
-        }
-    }
-
     override fun onResume() {
         playlistAdapter.playlistList.clear()
-        loadPlaylists(playlistAdapter, false)
+        loadPlaylists(playlistAdapter)
         super.onResume()
     }
 
-    private fun loadPlaylists(playlistAdapter: PlaylistAdapter, notify: Boolean = true) {
+    private fun loadPlaylists(playlistAdapter: PlaylistAdapter) {
         Thread {
             var url = "https://api.spotify.com/v1/me/playlists?limit=50"
             do {
@@ -76,15 +63,10 @@ class PlaylistActivity : AppCompatActivity() {
                     }
                     runOnUiThread {
                         playlistAdapter.playlistList.addAll(playlists)
-                        if (notify)
-                            playlistAdapter.notifyItemRangeInserted(playlistAdapter.itemCount - playlists.size, playlists.size)
+                        playlistAdapter.notifyDataSetChanged()
                     }
                 }
             } while (url != "null")
-            runOnUiThread {
-                if (!notify)
-                    playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.playlistList.size)
-            }
         }.start()
     }
 }

@@ -1,15 +1,10 @@
 package rs.moma.spotifyshuffle.songs
 
-import android.content.pm.ActivityInfo
-import android.graphics.Rect
 import android.os.Bundle
 import android.util.TypedValue.*
-import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.*
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -21,7 +16,6 @@ import rs.moma.spotifyshuffle.global.*
 import java.util.*
 import java.util.Collections.shuffle
 import kotlin.collections.ArrayList
-import kotlin.concurrent.schedule
 
 class SongActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
@@ -50,14 +44,6 @@ class SongActivity : AppCompatActivity() {
             recyclerView.scrollToPosition(0)
         }
         findViewById<FloatingActionButton>(R.id.done_button).setOnClickListener { updateSongs(songAdapter) }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        Timer().schedule(500) {
-            for (song in songAdapter.songList)
-                Glide.with(this@SongActivity).load(song.imageUrl).diskCacheStrategy(DiskCacheStrategy.ALL).preload()
-        }
     }
 
     private fun updateSongs(songAdapter: SongAdapter) {
@@ -147,9 +133,9 @@ class SongActivity : AppCompatActivity() {
                             }
                         }
                     }
-                }
-                runOnUiThread {
-                    songAdapter.addSongs(songs)
+                    runOnUiThread {
+                        songAdapter.addSongs(songs)
+                    }
                 }
                 step++
             } while (url != "null")
