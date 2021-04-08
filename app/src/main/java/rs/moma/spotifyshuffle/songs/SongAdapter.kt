@@ -37,11 +37,6 @@ class SongAdapter(private val activity: SongActivity) : RecyclerView.Adapter<Son
         holder.bindData(songList, songList[position], activity)
     }
 
-    fun addSongs(songs: ArrayList<Song>) {
-        songList.addAll(songs)
-        notifyItemRangeInserted(itemCount - songs.size, songs.size)
-    }
-
     fun moveSong(from: Int, to: Int) {
         swap(songList, from, to)
         notifyItemMoved(from, to)
