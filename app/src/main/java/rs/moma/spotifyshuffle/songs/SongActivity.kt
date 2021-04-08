@@ -1,10 +1,17 @@
 package rs.moma.spotifyshuffle.songs
 
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.TypedValue.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.doOnLayout
 import androidx.recyclerview.widget.*
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -15,6 +22,7 @@ import rs.moma.spotifyshuffle.*
 import rs.moma.spotifyshuffle.global.*
 import java.util.*
 import java.util.Collections.shuffle
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
 
 class SongActivity : AppCompatActivity() {
@@ -36,7 +44,11 @@ class SongActivity : AppCompatActivity() {
         recyclerView.adapter = songAdapter
         songTouchHelper = ItemTouchHelper(SongTouchHelperCallback(songAdapter))
         songTouchHelper.attachToRecyclerView(recyclerView)
-        loadSongs(songAdapter, intent.extras?.getString("playlistId")!!)
+        recyclerView.doOnLayout {
+            Loader.itemVisibleCount = it.measuredHeight / applyDimension(COMPLEX_UNIT_DIP, 80f, resources.displayMetrics).toInt()
+            Loader.loaded = AtomicInteger()
+            loadSongs(intent.extras?.getString("playlistId")!!)
+        }
         findViewById<ImageButton>(R.id.delete_button).setOnClickListener { deleteSelected(songAdapter) }
         findViewById<ImageButton>(R.id.shuffle_button).setOnClickListener {
             shuffle(songAdapter.songList)
@@ -101,12 +113,12 @@ class SongActivity : AppCompatActivity() {
             super.onBackPressed()
     }
 
-    private fun loadSongs(songAdapter: SongAdapter, playlistId: String) {
+    private fun loadSongs(playlistId: String) {
         Thread {
             var step = 0
             var url = "https://api.spotify.com/v1/playlists/$playlistId/tracks?market=from_token"
             do {
-                val songs = ArrayList<Song>()
+                val songs = Collections.synchronizedList(ArrayList<Song>())
                 val request = Request.Builder()
                     .addHeader("Authorization", "Bearer " + getToken(this))
                     .url(url)
@@ -125,20 +137,70 @@ class SongActivity : AppCompatActivity() {
                                 for (j in 1 until artists.length())
                                     artist += ", " + artists.getJSONObject(j).getString("name")
                                 val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
-                                songs.add(Song(i + 1 + step * 100,
-                                               track.getString("uri"),
-                                               track.getString("name"),
-                                               artist,
-                                               image))
+                                synchronized(songs) {
+                                    songs.add(Song(i + 1 + step * 100,
+                                                   track.getString("uri"),
+                                                   track.getString("name"),
+                                                   artist,
+                                                   image))
+                                }
+                                if (step == 0 && i < Loader.itemVisibleCount)
+                                    Loader.loadFirst(image, songs, songAdapter, this@SongActivity)
                             }
                         }
                     }
-                    runOnUiThread {
-                        songAdapter.addSongs(songs)
-                    }
+                    Loader.loadLater(songs, songAdapter, this@SongActivity)
                 }
                 step++
             } while (url != "null")
         }.start()
+    }
+
+    object Loader {
+        var loaded = AtomicInteger()
+        var itemVisibleCount = 0
+        fun loadFirst(image: String, songs: MutableList<Song>, adapter: SongAdapter, activity: SongActivity) {
+            Glide.with(activity).load(image).listener(object : RequestListener<Drawable> {
+                override fun onLoadFailed(p0: GlideException?, p1: Any?, p2: Target<Drawable>?, p3: Boolean): Boolean = false
+                override fun onResourceReady(p0: Drawable?, p1: Any?, p2: Target<Drawable>?, p3: DataSource?, p4: Boolean): Boolean {
+                    loaded.incrementAndGet()
+                    if (loaded.toInt() == itemVisibleCount) activity.runOnUiThread {
+                        synchronized(songs) {
+                            adapter.songList.addAll(songs.subList(0, itemVisibleCount))
+                            songs.subList(0, itemVisibleCount).clear()
+                        }
+                        adapter.notifyItemRangeInserted(0, itemVisibleCount)
+                        loadLater(songs, adapter, activity)
+                    }
+                    return false
+                }
+            }).preload()
+        }
+
+        fun loadLater(songs: MutableList<Song>, adapter: SongAdapter, activity: SongActivity) {
+            if (loaded.toInt() == itemVisibleCount) activity.runOnUiThread {
+                synchronized(songs) {
+                    val size = songs.size
+                    adapter.songList.addAll(songs)
+                    songs.clear()
+                    adapter.notifyItemRangeInserted(adapter.itemCount - size, size)
+                    Thread {
+                        startChain(adapter.itemCount - size, adapter.itemCount, adapter, activity)
+                    }.start()
+                }
+            }
+        }
+
+        fun startChain(from: Int, to: Int, adapter: SongAdapter, activity: SongActivity) {
+            if (from < to) {
+                Glide.with(activity).load(adapter.songList[from].imageUrl).listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(p0: GlideException?, p1: Any?, p2: Target<Drawable>?, p3: Boolean): Boolean = false
+                    override fun onResourceReady(p0: Drawable?, p1: Any?, p2: Target<Drawable>?, p3: DataSource?, p4: Boolean): Boolean {
+                        startChain(from + 1, to, adapter, activity)
+                        return false
+                    }
+                }).preload()
+            }
+        }
     }
 }

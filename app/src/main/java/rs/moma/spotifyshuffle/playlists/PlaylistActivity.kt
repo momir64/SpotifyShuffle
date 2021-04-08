@@ -27,16 +27,17 @@ class PlaylistActivity : AppCompatActivity() {
         recyclerView.addItemDecoration(VerticalSpaceItemDecoration(applyDimension(COMPLEX_UNIT_DIP, 16f, resources.displayMetrics).toInt()))
         playlistAdapter = PlaylistAdapter(ArrayList(), this)
         recyclerView.adapter = playlistAdapter
-        loadPlaylists(playlistAdapter)
+        loadPlaylists()
     }
 
     override fun onResume() {
+        recyclerView.scrollToPosition(0)
         playlistAdapter.playlistList.clear()
-        loadPlaylists(playlistAdapter)
+        loadPlaylists()
         super.onResume()
     }
 
-    private fun loadPlaylists(playlistAdapter: PlaylistAdapter) {
+    private fun loadPlaylists() {
         Thread {
             var url = "https://api.spotify.com/v1/me/playlists?limit=50"
             do {
