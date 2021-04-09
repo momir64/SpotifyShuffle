@@ -84,14 +84,19 @@ class PlaylistActivity : AppCompatActivity() {
                         val images = items.getJSONObject(i).getJSONArray("images")
                         if (images.length() > 0) {
                             val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
-                            playlistAdapter.playlistList[++j] = Playlist(items.getJSONObject(i).getString("id"),
-                                                                         items.getJSONObject(i).getString("name"),
-                                                                         items.getJSONObject(i).getString("description"),
-                                                                         image)
-                            runOnUiThread { playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.itemCount) }
+                            val playlist = Playlist(items.getJSONObject(i).getString("id"),
+                                                    items.getJSONObject(i).getString("name"),
+                                                    items.getJSONObject(i).getString("description"),
+                                                    image)
+                            if (++j >= playlistAdapter.itemCount) {
+                                playlistAdapter.playlistList.add(playlist)
+                                runOnUiThread { playlistAdapter.notifyItemInserted(j) }
+                            } else {
+                                playlistAdapter.playlistList[j] = playlist
+                                runOnUiThread { playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.itemCount) }
+                            }
                         }
                     }
-
                 }
             } while (url != "null")
             if (++j < playlistAdapter.itemCount) {

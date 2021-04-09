@@ -113,23 +113,24 @@ class SongActivity : AppCompatActivity() {
                     val obj = JSONObject(response.body!!.string())
                     url = obj.getString("next")
                     val items = obj.getJSONArray("items")
-                    for (i in 0 until items.length()) {
-                        val track = items.getJSONObject(i)?.getJSONObject("track")
-                        val images = track?.getJSONObject("album")?.getJSONArray("images")
-                        if (images?.length() ?: 0 > 0 && !items.getJSONObject(i).getBoolean("is_local")) {
-                            val artists = track?.getJSONArray("artists")
-                            var artist = artists?.getJSONObject(0)?.getString("name")
-                            for (j in 1 until (artists?.length() ?: 0))
-                                artist += ", " + artists?.getJSONObject(j)?.getString("name")
-                            val image = images?.getJSONObject(if (images.length() == 1) 0 else 1)?.getString("url")
-                            if (track != null && artist != null && image != null)
-                                songs.add(Song(i + 1 + step * 100,
+                    var x = 0
+                    for (i in 0 until items.length())
+                        if (!items.getJSONObject(i).isNull("track")) {
+                            val track = items.getJSONObject(i).getJSONObject("track")
+                            val images = track.getJSONObject("album").getJSONArray("images")
+                            if (images.length() > 0 && !items.getJSONObject(i).getBoolean("is_local")) {
+                                val artists = track.getJSONArray("artists")
+                                var artist = artists.getJSONObject(0).getString("name")
+                                for (j in 1 until artists.length())
+                                    artist += ", " + artists.getJSONObject(j).getString("name")
+                                val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
+                                songs.add(Song(++x + step * 100,
                                                track.getString("uri"),
                                                track.getString("name"),
                                                artist,
                                                image))
+                            }
                         }
-                    }
                     runOnUiThread {
                         songAdapter.songList.addAll(songs)
                         songAdapter.notifyItemRangeInserted(songAdapter.itemCount - songs.size, songs.size)
