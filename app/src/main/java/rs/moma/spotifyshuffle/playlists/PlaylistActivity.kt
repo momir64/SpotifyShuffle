@@ -1,26 +1,23 @@
 package rs.moma.spotifyshuffle.playlists
 
-import android.content.pm.ActivityInfo
 import android.os.Bundle
-import android.util.TypedValue.*
+import android.util.TypedValue.COMPLEX_UNIT_DIP
+import android.util.TypedValue.applyDimension
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import rs.moma.spotifyshuffle.R
-import rs.moma.spotifyshuffle.global.*
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.concurrent.schedule
+import rs.moma.spotifyshuffle.global.VerticalSpaceItemDecoration
+import rs.moma.spotifyshuffle.global.getToken
 
 class PlaylistActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var playlistAdapter: PlaylistAdapter
+    private var reLoad: Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,58 +29,75 @@ class PlaylistActivity : AppCompatActivity() {
         recyclerView.addItemDecoration(VerticalSpaceItemDecoration(applyDimension(COMPLEX_UNIT_DIP, 16f, resources.displayMetrics).toInt()))
         playlistAdapter = PlaylistAdapter(ArrayList(), this)
         recyclerView.adapter = playlistAdapter
-        loadPlaylists(playlistAdapter)
-    }
-
-    override fun onStart() {
-        super.onStart()
-        Timer().schedule(500) {
-            for (playlist in playlistAdapter.playlistList)
-                Glide.with(this@PlaylistActivity).load(playlist.imageUrl).diskCacheStrategy(DiskCacheStrategy.ALL).preload()
-        }
+        loadPlaylists()
+        reLoad = false
     }
 
     override fun onResume() {
-        playlistAdapter.playlistList.clear()
-        loadPlaylists(playlistAdapter, false)
+        if (reLoad)
+            reLoadPlaylists()
+        else
+            reLoad = true
         super.onResume()
     }
 
-    private fun loadPlaylists(playlistAdapter: PlaylistAdapter, notify: Boolean = true) {
+    private fun loadPlaylists() {
         Thread {
             var url = "https://api.spotify.com/v1/me/playlists?limit=50"
             do {
                 val playlists = ArrayList<Playlist>()
-                val request = Request.Builder()
-                    .addHeader("Authorization", "Bearer " + getToken(this))
-                    .url(url)
-                    .build()
+                val request = Request.Builder().addHeader("Authorization", "Bearer " + getToken(this)).url(url).build()
                 val response = OkHttpClient().newCall(request).execute()
                 if (response.isSuccessful) {
                     val obj = JSONObject(response.body!!.string())
                     url = obj.getString("next")
-                    with(obj.getJSONArray("items")) {
-                        for (i in 0 until length()) {
-                            val images = getJSONObject(i).getJSONArray("images")
-                            if (images.length() > 0) {
-                                val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
-                                playlists.add(Playlist(getJSONObject(i).getString("id"),
-                                                       getJSONObject(i).getString("name"),
-                                                       getJSONObject(i).getString("description"),
-                                                       image))
-                            }
+                    val items = obj.getJSONArray("items")
+                    for (i in 0 until items.length()) {
+                        val images = items.getJSONObject(i).getJSONArray("images")
+                        if (images.length() > 0) {
+                            val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
+                            playlists.add(Playlist(items.getJSONObject(i).getString("id"),
+                                                   items.getJSONObject(i).getString("name"),
+                                                   items.getJSONObject(i).getString("description"),
+                                                   image))
                         }
                     }
-                    runOnUiThread {
-                        playlistAdapter.playlistList.addAll(playlists)
-                        if (notify)
-                            playlistAdapter.notifyItemRangeInserted(playlistAdapter.itemCount - playlists.size, playlists.size)
-                    }
+                    playlistAdapter.playlistList.addAll(playlists)
+                    runOnUiThread { playlistAdapter.notifyItemRangeInserted(playlistAdapter.itemCount - playlists.size, playlists.size) }
                 }
             } while (url != "null")
-            runOnUiThread {
-                if (!notify)
-                    playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.playlistList.size)
+        }.start()
+    }
+
+    private fun reLoadPlaylists() {
+        Thread {
+            var j = -1
+            var url = "https://api.spotify.com/v1/me/playlists?limit=50"
+            do {
+                val request = Request.Builder().addHeader("Authorization", "Bearer " + getToken(this)).url(url).build()
+                val response = OkHttpClient().newCall(request).execute()
+                if (response.isSuccessful) {
+                    val obj = JSONObject(response.body!!.string())
+                    url = obj.getString("next")
+                    val items = obj.getJSONArray("items")
+                    for (i in 0 until items.length()) {
+                        val images = items.getJSONObject(i).getJSONArray("images")
+                        if (images.length() > 0) {
+                            val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
+                            playlistAdapter.playlistList[++j] = Playlist(items.getJSONObject(i).getString("id"),
+                                                                         items.getJSONObject(i).getString("name"),
+                                                                         items.getJSONObject(i).getString("description"),
+                                                                         image)
+                            runOnUiThread { playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.itemCount) }
+                        }
+                    }
+
+                }
+            } while (url != "null")
+            if (++j < playlistAdapter.itemCount) {
+                val d = playlistAdapter.itemCount - j
+                playlistAdapter.playlistList.subList(j, playlistAdapter.itemCount).clear()
+                runOnUiThread { playlistAdapter.notifyItemRangeRemoved(j, d) }
             }
         }.start()
     }

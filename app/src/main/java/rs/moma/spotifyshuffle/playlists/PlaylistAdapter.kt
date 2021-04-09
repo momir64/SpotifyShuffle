@@ -2,12 +2,15 @@ package rs.moma.spotifyshuffle.playlists
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.*
-import android.widget.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import rs.moma.spotifyshuffle.*
+import rs.moma.spotifyshuffle.R
 import rs.moma.spotifyshuffle.songs.SongActivity
 
 

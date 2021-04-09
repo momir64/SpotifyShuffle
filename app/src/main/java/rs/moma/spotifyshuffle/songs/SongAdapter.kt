@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import rs.moma.spotifyshuffle.*
 import java.util.Collections.swap
-import kotlin.collections.ArrayList
 
 var selectable = false
 
@@ -37,11 +36,6 @@ class SongAdapter(private val activity: SongActivity) : RecyclerView.Adapter<Son
         holder.bindData(songList, songList[position], activity)
     }
 
-    fun addSongs(songs: ArrayList<Song>) {
-        songList.addAll(songs)
-        notifyItemRangeInserted(itemCount - songs.size, songs.size)
-    }
-
     fun moveSong(from: Int, to: Int) {
         swap(songList, from, to)
         notifyItemMoved(from, to)
@@ -58,8 +52,8 @@ class SongViewHolder(songView: View) : RecyclerView.ViewHolder(songView) {
 
     @SuppressLint("ClickableViewAccessibility")
     fun bindData(songList: ArrayList<Song>, song: Song, activity: SongActivity) {
-       val deleteButton = activity.findViewById<ImageButton>(R.id.delete_button)
-       val shuffleButton = activity.findViewById<ImageButton>(R.id.shuffle_button)
+        val deleteButton = activity.findViewById<ImageButton>(R.id.delete_button)
+        val shuffleButton = activity.findViewById<ImageButton>(R.id.shuffle_button)
         if (selectable) {
             dragDots.visibility = VISIBLE
             songNum.visibility = INVISIBLE
