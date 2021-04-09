@@ -13,7 +13,6 @@ import com.bumptech.glide.Glide
 import rs.moma.spotifyshuffle.R
 import rs.moma.spotifyshuffle.songs.SongActivity
 
-
 class PlaylistAdapter(val playlistList: ArrayList<Playlist>, private val activity: PlaylistActivity) : RecyclerView.Adapter<PlaylistViewHolder>() {
     override fun getItemCount() = playlistList.size
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaylistViewHolder {
