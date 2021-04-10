@@ -4,9 +4,12 @@ import android.content.Context
 import android.graphics.Rect
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.util.TypedValue
+import android.util.TypedValue.applyDimension
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
@@ -16,6 +19,10 @@ import org.json.JSONObject
 const val preferencePath = "com.example.spotifyshuffle.my_variables"
 const val CLIENT_ID = "8edbcacd9213442a99c413fc606e057a"
 const val REDIRECT_URI = "spotifyshuffle://callback"
+
+class PreCachingLayoutManager(private val context: Context) : LinearLayoutManager(context) {
+    override fun getExtraLayoutSpace(state: RecyclerView.State): Int = applyDimension(TypedValue.COMPLEX_UNIT_DIP, 80f, context.resources.displayMetrics).toInt() * 10
+}
 
 class VerticalSpaceItemDecoration(private val mVerticalSpaceHeight: Int) : RecyclerView.ItemDecoration() {
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
