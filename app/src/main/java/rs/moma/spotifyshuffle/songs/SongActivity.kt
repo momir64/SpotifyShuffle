@@ -39,9 +39,9 @@ class SongActivity : AppCompatActivity() {
         loadSongs(intent.extras?.getString("playlistId")!!)
         findViewById<ImageButton>(R.id.delete_button).setOnClickListener { deleteSelected(songAdapter) }
         findViewById<ImageButton>(R.id.shuffle_button).setOnClickListener {
-            recyclerView.scrollToPosition(0)
             shuffle(songAdapter.songList)
             songAdapter.notifyItemRangeChanged(0, songAdapter.itemCount)
+            recyclerView.scrollToPosition(0)
         }
         findViewById<FloatingActionButton>(R.id.done_button).setOnClickListener { updateSongs() }
     }
@@ -103,7 +103,7 @@ class SongActivity : AppCompatActivity() {
 
     private fun loadSongs(playlistId: String) {
         Thread {
-            var step = 0
+            var x = 0
             var url = "https://api.spotify.com/v1/playlists/$playlistId/tracks?market=from_token"
             do {
                 val songs = ArrayList<Song>()
@@ -113,7 +113,6 @@ class SongActivity : AppCompatActivity() {
                     val obj = JSONObject(response.body!!.string())
                     url = obj.getString("next")
                     val items = obj.getJSONArray("items")
-                    var x = 0
                     for (i in 0 until items.length())
                         if (!items.getJSONObject(i).isNull("track")) {
                             val track = items.getJSONObject(i).getJSONObject("track")
@@ -124,7 +123,7 @@ class SongActivity : AppCompatActivity() {
                                 for (j in 1 until artists.length())
                                     artist += ", " + artists.getJSONObject(j).getString("name")
                                 val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
-                                songs.add(Song(++x + step * 100,
+                                songs.add(Song(++x,
                                                track.getString("uri"),
                                                track.getString("name"),
                                                artist,
@@ -136,7 +135,6 @@ class SongActivity : AppCompatActivity() {
                         songAdapter.notifyItemRangeInserted(songAdapter.itemCount - songs.size, songs.size)
                     }
                 }
-                step++
             } while (url != "null")
         }.start()
     }
