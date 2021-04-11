@@ -9,6 +9,8 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.Target
 import rs.moma.spotifyshuffle.*
 import java.util.Collections.swap
 
@@ -71,7 +73,8 @@ class SongViewHolder(songView: View) : RecyclerView.ViewHolder(songView) {
             songNum.text = song.num.toString()
         }
         songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (song.selected) R.color.card_color_selected else R.color.card_color))
-        Glide.with(activity).load(song.imageUrl).placeholder(R.drawable.ic_placeholder).into(songImage)
+        Glide.with(activity).load(song.imageUrl).placeholder(R.drawable.ic_placeholder).diskCacheStrategy(DiskCacheStrategy.RESOURCE)
+            .override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).dontTransform().into(songImage)
         songTitle.text = song.title
         songArtist.text = song.artist
         songCard.setOnClickListener {

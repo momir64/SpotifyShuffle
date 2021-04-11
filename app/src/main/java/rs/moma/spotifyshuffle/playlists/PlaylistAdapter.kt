@@ -10,6 +10,8 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.Target
 import rs.moma.spotifyshuffle.R
 import rs.moma.spotifyshuffle.songs.SongActivity
 
@@ -31,7 +33,8 @@ class PlaylistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private var playlistCard = itemView.findViewById<CardView>(R.id.playlist_card)
 
     fun bindData(playlist: Playlist, activity: PlaylistActivity) {
-        Glide.with(activity).load(playlist.imageUrl).placeholder(R.drawable.ic_placeholder).into(playlistImage)
+        Glide.with(activity).load(playlist.imageUrl).placeholder(R.drawable.ic_placeholder).diskCacheStrategy(DiskCacheStrategy.RESOURCE)
+            .override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).dontTransform().into(playlistImage)
         playlistTitle.text = playlist.title
         playlistCard.setOnClickListener {
             val intent = Intent(activity, SongActivity::class.java)

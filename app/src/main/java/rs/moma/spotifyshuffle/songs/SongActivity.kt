@@ -9,6 +9,7 @@ import androidx.core.view.doOnLayout
 import androidx.recyclerview.widget.*
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
@@ -165,17 +166,18 @@ class SongActivity : AppCompatActivity() {
     private fun preloadFirst(x: Int, songs: ArrayList<Song>) {
         val semaphore = Semaphore(1 - x)
         for (i in 0 until x)
-            Glide.with(this).load(songs[i].imageUrl).listener(object : RequestListener<Drawable> {
-                override fun onLoadFailed(p0: GlideException?, p1: Any?, p2: Target<Drawable>?, p3: Boolean): Boolean {
-                    semaphore.release()
-                    return false
-                }
+            Glide.with(this).load(songs[i].imageUrl).diskCacheStrategy(DiskCacheStrategy.RESOURCE).override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
+                .dontTransform().listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(p0: GlideException?, p1: Any?, p2: Target<Drawable>?, p3: Boolean): Boolean {
+                        semaphore.release()
+                        return false
+                    }
 
-                override fun onResourceReady(p0: Drawable?, p1: Any?, p2: Target<Drawable>?, p3: DataSource?, p4: Boolean): Boolean {
-                    semaphore.release()
-                    return false
-                }
-            }).preload()
+                    override fun onResourceReady(p0: Drawable?, p1: Any?, p2: Target<Drawable>?, p3: DataSource?, p4: Boolean): Boolean {
+                        semaphore.release()
+                        return false
+                    }
+                }).preload()
         semaphore.acquire()
     }
 }
