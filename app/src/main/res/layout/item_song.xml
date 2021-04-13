@@ -72,7 +72,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/drag_indicator" />
+            app:srcCompat="@drawable/ic_drag" />
 
         <TextView
             android:id="@+id/song_num"
