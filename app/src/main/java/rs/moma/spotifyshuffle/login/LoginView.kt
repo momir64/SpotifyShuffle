@@ -18,7 +18,6 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.*
 
-
 class LoginView : AppCompatActivity() {
     private lateinit var webView: WebView
 
@@ -29,7 +28,7 @@ class LoginView : AppCompatActivity() {
         val codeVerifier = generateCodeVerifier()
         val codeChallenge = generateCodeChallenge(codeVerifier)
         val scopes = "playlist-modify-public playlist-modify-private playlist-read-private playlist-read-collaborative user-library-modify user-library-read"
-        webView = findViewById<WebView>(R.id.webview)
+        webView = findViewById(R.id.webview)
         var code: String?
         webView.settings.javaScriptEnabled = true
         webView.webViewClient = object : WebViewClient() {

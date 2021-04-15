@@ -20,7 +20,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(view: View?) {
         startActivity(Intent(this, LoginView::class.java))
-        overridePendingTransition(R.anim.inmid, R.anim.midout)
+        overridePendingTransition(R.anim.hold, R.anim.hold)
         finish()
     }
 }

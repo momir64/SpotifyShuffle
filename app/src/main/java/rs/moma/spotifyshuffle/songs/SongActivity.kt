@@ -7,6 +7,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnLayout
 import androidx.recyclerview.widget.*
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -27,9 +28,10 @@ import java.util.concurrent.Semaphore
 import kotlin.collections.ArrayList
 
 class SongActivity : AppCompatActivity() {
+    private lateinit var songAdapter: SongAdapter
     private lateinit var recyclerView: RecyclerView
+    lateinit var swipeContainer: SwipeRefreshLayout
     lateinit var songTouchHelper: ItemTouchHelper
-    lateinit var songAdapter: SongAdapter
     private var semaphore = Semaphore(1)
     private var itemVisibleCount = 0
 
@@ -37,7 +39,10 @@ class SongActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_songs)
 
-        findViewById<ImageButton>(R.id.back_button).setOnClickListener { onBackPressed() }
+        swipeContainer = findViewById(R.id.swipe_container)
+        swipeContainer.setColorSchemeResources(R.color.green)
+        swipeContainer.setOnRefreshListener { reLoadSongs(intent.extras?.getString("playlistId")!!) }
+        findViewById<ImageButton>(R.id.back_button_song).setOnClickListener { onBackPressed() }
         findViewById<TextView>(R.id.playlistTitle).text = intent.extras?.getString("playlistTitle")
         recyclerView = findViewById(R.id.songs_list)
         (recyclerView.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
@@ -125,6 +130,47 @@ class SongActivity : AppCompatActivity() {
             super.onBackPressed()
     }
 
+    private fun reLoadSongs(playlistId: String) {
+        Thread {
+            var x = -1
+            var url = "https://api.spotify.com/v1/playlists/$playlistId/tracks?market=from_token"
+            do {
+                val request = Request.Builder().addHeader("Authorization", "Bearer " + getToken(this)).url(url).build()
+                val response = OkHttpClient().newCall(request).execute()
+                if (response.isSuccessful) {
+                    val obj = JSONObject(response.body!!.string())
+                    url = obj.getString("next")
+                    val items = obj.getJSONArray("items")
+                    for (i in 0 until items.length())
+                        if (!items.getJSONObject(i).isNull("track")) {
+                            val track = items.getJSONObject(i).getJSONObject("track")
+                            val images = track.getJSONObject("album").getJSONArray("images")
+                            if (images.length() > 0 && !items.getJSONObject(i).getBoolean("is_local")) {
+                                val artists = track.getJSONArray("artists")
+                                var artist = artists.getJSONObject(0).getString("name")
+                                for (j in 1 until artists.length())
+                                    artist += ", " + artists.getJSONObject(j).getString("name")
+                                val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
+                                val song = Song(track.getString("uri"),
+                                                track.getString("name"),
+                                                artist,
+                                                image)
+                                if (++x >= songAdapter.itemCount)
+                                    songAdapter.songList.add(song)
+                                else
+                                    songAdapter.songList[x] = song
+                            }
+                        }
+                }
+            } while (url != "null")
+            if (++x < songAdapter.itemCount)
+                songAdapter.songList.subList(x, songAdapter.itemCount).clear()
+            preloadFirst(itemVisibleCount.coerceAtMost(songAdapter.itemCount), songAdapter.songList)
+            runOnUiThread { songAdapter.notifyDataSetChanged() }
+            swipeContainer.isRefreshing = false
+        }.start()
+    }
+
     private fun loadSongs(playlistId: String) {
         Thread {
             var x = 0
@@ -147,12 +193,11 @@ class SongActivity : AppCompatActivity() {
                                 for (j in 1 until artists.length())
                                     artist += ", " + artists.getJSONObject(j).getString("name")
                                 val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
-                                songs.add(Song(++x,
-                                               track.getString("uri"),
+                                songs.add(Song(track.getString("uri"),
                                                track.getString("name"),
                                                artist,
                                                image))
-                                if (x == itemVisibleCount || (i + 1 == items.length() && x < itemVisibleCount))
+                                if (++x == itemVisibleCount || (i + 1 == items.length() && x < itemVisibleCount))
                                     preloadFirst(x, songs)
                             }
                         }

@@ -1,31 +1,51 @@
 package rs.moma.spotifyshuffle.playlists
 
+import android.content.DialogInterface.BUTTON_POSITIVE
+import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.text.InputType
 import android.util.TypedValue.COMPLEX_UNIT_DIP
 import android.util.TypedValue.applyDimension
+import android.view.View
+import android.view.WindowManager
+import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnLayout
+import androidx.core.view.setPadding
+import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import rs.moma.spotifyshuffle.R
 import rs.moma.spotifyshuffle.global.PreCachingLayoutManager
 import rs.moma.spotifyshuffle.global.VerticalSpaceItemDecoration
 import rs.moma.spotifyshuffle.global.getToken
+import rs.moma.spotifyshuffle.global.preferencePath
+import rs.moma.spotifyshuffle.login.LoginActivity
 import java.util.concurrent.Semaphore
+
 
 class PlaylistActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var playlistAdapter: PlaylistAdapter
+    private lateinit var swipeContainer: SwipeRefreshLayout
     private var reLoad: Boolean = true
     private var itemVisibleCount = 0
 
@@ -33,6 +53,11 @@ class PlaylistActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_playlists)
 
+        swipeContainer = findViewById(R.id.swipe_container)
+        swipeContainer.setColorSchemeResources(R.color.green)
+        swipeContainer.setOnRefreshListener { reLoadPlaylists() }
+        findViewById<ImageButton>(R.id.back_button_playlist).setOnClickListener { onBackPressed() }
+        findViewById<ImageButton>(R.id.logout_button).setOnClickListener { logOut() }
         recyclerView = findViewById(R.id.playlists_list)
         (recyclerView.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         recyclerView.layoutManager = PreCachingLayoutManager(this)
@@ -43,6 +68,8 @@ class PlaylistActivity : AppCompatActivity() {
             itemVisibleCount = it.measuredHeight / applyDimension(COMPLEX_UNIT_DIP, 80f, resources.displayMetrics).toInt()
             loadPlaylists()
         }
+        findViewById<ImageButton>(R.id.playlist_add_button).setOnClickListener { selectable = true; playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.itemCount) }
+        findViewById<ImageButton>(R.id.playlist_check_button).setOnClickListener { createPlaylist() }
         reLoad = false
     }
 
@@ -52,6 +79,119 @@ class PlaylistActivity : AppCompatActivity() {
         else
             reLoad = true
         super.onResume()
+    }
+
+    override fun onBackPressed() {
+        if (selectable) {
+            selectable = false
+            playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.itemCount)
+        } else
+            super.onBackPressed()
+    }
+
+    private fun logOut() {
+        getSharedPreferences(preferencePath, MODE_PRIVATE).edit().clear().apply()
+        startActivity(Intent(this, LoginActivity::class.java))
+        overridePendingTransition(R.anim.inmid, R.anim.midout)
+        finish()
+    }
+
+    private fun createPlaylist() {
+        val playlists = playlistAdapter.playlistList.filter { it.selected }
+        selectable = false
+        playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.itemCount)
+        if (playlists.isNotEmpty()) {
+            val dp = applyDimension(COMPLEX_UNIT_DIP, 1F, resources.displayMetrics)
+            val textInputLayout = TextInputLayout(this)
+            val editText = TextInputEditText(textInputLayout.context)
+            editText.setTextColor(resources.getColor(R.color.white, null))
+            editText.setHintTextColor(resources.getColor(R.color.hint, null))
+            editText.addTextChangedListener { textInputLayout.isErrorEnabled = false }
+            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            textInputLayout.boxBackgroundMode = TextInputLayout.BOX_BACKGROUND_OUTLINE
+            textInputLayout.setBoxCornerRadii(8 * dp, 8 * dp, 8 * dp, 8 * dp)
+            textInputLayout.setBoxBackgroundColorResource(R.color.card_color)
+            val states = arrayOf(intArrayOf(android.R.attr.state_enabled))
+            val colors = intArrayOf(resources.getColor(R.color.error, null))
+            val colorList = ColorStateList(states, colors)
+            textInputLayout.boxStrokeErrorColor = colorList
+            textInputLayout.setErrorIconTintList(colorList)
+            textInputLayout.setPadding((24 * dp).toInt())
+            textInputLayout.setErrorTextColor(colorList)
+            editText.setPadding((16 * dp).toInt())
+            textInputLayout.addView(editText)
+            editText.hint = "Playlist name"
+            val dialog = MaterialAlertDialogBuilder(this, R.style.AlertDialogTheme)
+                .setTitle("Create playlist")
+                .setView(textInputLayout)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Create", null)
+                .show()
+            editText.onFocusChangeListener = View.OnFocusChangeListener { _, _ ->
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+            }
+            dialog.getButton(BUTTON_POSITIVE).setOnClickListener {
+                val title = editText.text.toString().trim()
+                if (title.isNotEmpty()) {
+                    val songs = ArrayList<String>()
+                    Thread {
+                        for (playlist in playlists)
+                            songs.addAll(getSongs(playlist.id))
+                        addSongs2Playlist(songs, createPlaylist(title))
+                        reLoadPlaylists()
+                    }.start()
+                    dialog.dismiss()
+                } else
+                    textInputLayout.error = "Playlist name can't be empty!"
+            }
+            editText.requestFocus()
+        }
+    }
+
+    private fun addSongs2Playlist(songs: ArrayList<String>, playlistId: String) {
+        var offset = 0
+        while (offset < songs.size) {
+            val url = "https://api.spotify.com/v1/playlists/$playlistId/tracks"
+            val sublist = songs.subList(offset, (offset + 100).coerceAtMost(songs.size))
+            val body = JSONObject().put("uris", JSONArray(sublist)).toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+            OkHttpClient().newCall(Request.Builder().url(url).addHeader("Authorization", "Bearer " + getToken(this)).post(body).build()).execute()
+            offset += 100
+        }
+    }
+
+    private fun createPlaylist(title: String): String {
+        val body = JSONObject().put("name", title).toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+        val request = Request.Builder()
+            .url("https://api.spotify.com/v1/users/${getUserId()}/playlists")
+            .addHeader("Authorization", "Bearer " + getToken(this))
+            .post(body)
+            .build()
+        val response = OkHttpClient().newCall(request).execute()
+        return if (response.isSuccessful) JSONObject(response.body!!.string()).getString("id") else ""
+    }
+
+    private fun getSongs(playlistId: String): ArrayList<String> {
+        val songs = ArrayList<String>()
+        var url = "https://api.spotify.com/v1/playlists/$playlistId/tracks?market=from_token"
+        do {
+            val request = Request.Builder().addHeader("Authorization", "Bearer " + getToken(this)).url(url).build()
+            val response = OkHttpClient().newCall(request).execute()
+            if (response.isSuccessful) {
+                val obj = JSONObject(response.body!!.string())
+                url = obj.getString("next")
+                val items = obj.getJSONArray("items")
+                for (i in 0 until items.length())
+                    if (!items.getJSONObject(i).isNull("track"))
+                        songs.add(items.getJSONObject(i).getJSONObject("track").getString("uri"))
+            }
+        } while (url != "null")
+        return songs
+    }
+
+    private fun getUserId(): String {
+        val request = Request.Builder().addHeader("Authorization", "Bearer " + getToken(this)).url("https://api.spotify.com/v1/me").build()
+        val response = OkHttpClient().newCall(request).execute()
+        return if (response.isSuccessful) JSONObject(response.body!!.string()).getString("id") else ""
     }
 
     private fun loadPlaylists() {
@@ -72,7 +212,6 @@ class PlaylistActivity : AppCompatActivity() {
                             val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
                             playlists.add(Playlist(items.getJSONObject(i).getString("id"),
                                                    items.getJSONObject(i).getString("name"),
-                                                   items.getJSONObject(i).getString("description"),
                                                    image))
                             if (++x == itemVisibleCount || (i + 1 == items.length() && x < itemVisibleCount))
                                 preloadFirst(x, playlists)
@@ -102,7 +241,6 @@ class PlaylistActivity : AppCompatActivity() {
                             val image = images.getJSONObject(if (images.length() == 1) 0 else 1).getString("url")
                             val playlist = Playlist(items.getJSONObject(i).getString("id"),
                                                     items.getJSONObject(i).getString("name"),
-                                                    items.getJSONObject(i).getString("description"),
                                                     image)
                             if (++j >= playlistAdapter.itemCount)
                                 playlistAdapter.playlistList.add(playlist)
@@ -115,7 +253,8 @@ class PlaylistActivity : AppCompatActivity() {
             if (++j < playlistAdapter.itemCount)
                 playlistAdapter.playlistList.subList(j, playlistAdapter.itemCount).clear()
             preloadFirst(itemVisibleCount.coerceAtMost(playlistAdapter.itemCount), playlistAdapter.playlistList)
-            runOnUiThread { playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.itemCount) }
+            runOnUiThread { playlistAdapter.notifyDataSetChanged() }
+            swipeContainer.isRefreshing = false
         }.start()
     }
 

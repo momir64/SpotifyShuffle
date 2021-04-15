@@ -13,4 +13,7 @@
     <string name="shuffle">Shuffle</string>
     <string name="done">Done</string>
     <string name="delete">Delete</string>
+    <string name="add_playlist">Add playlist</string>
+    <string name="check_playlist">Check playlist</string>
+    <string name="logout">Logout</string>
 </resources>

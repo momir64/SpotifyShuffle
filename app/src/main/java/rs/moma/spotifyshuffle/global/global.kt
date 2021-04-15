@@ -89,7 +89,7 @@ fun setExpireTime(expireTime: Long, context: Context) {
 var currentToast: Toast? = null
 fun showToast(text: String, context: Context) {
     currentToast?.cancel()
-    currentToast = Toast.makeText(context, text, Toast.LENGTH_LONG)
+    currentToast = Toast.makeText(context, text, Toast.LENGTH_SHORT)
     currentToast?.show()
 }
 

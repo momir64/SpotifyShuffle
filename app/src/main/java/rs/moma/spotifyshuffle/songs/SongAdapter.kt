@@ -35,7 +35,7 @@ class SongAdapter(private val activity: SongActivity) : RecyclerView.Adapter<Son
     }
 
     override fun onBindViewHolder(holder: SongViewHolder, position: Int) {
-        holder.bindData(songList, songList[position], activity)
+        holder.bindData(songList, songList[position], activity, this)
     }
 
     fun moveSong(from: Int, to: Int) {
@@ -53,7 +53,7 @@ class SongViewHolder(songView: View) : RecyclerView.ViewHolder(songView) {
     private var songNum = songView.findViewById<TextView>(R.id.song_num)
 
     @SuppressLint("ClickableViewAccessibility")
-    fun bindData(songList: ArrayList<Song>, song: Song, activity: SongActivity) {
+    fun bindData(songList: ArrayList<Song>, song: Song, activity: SongActivity, songAdapter: SongAdapter) {
         val deleteButton = activity.findViewById<ImageButton>(R.id.delete_button)
         val shuffleButton = activity.findViewById<ImageButton>(R.id.shuffle_button)
         if (selectable) {
@@ -61,6 +61,8 @@ class SongViewHolder(songView: View) : RecyclerView.ViewHolder(songView) {
             songNum.visibility = INVISIBLE
             deleteButton.visibility = VISIBLE
             shuffleButton.visibility = INVISIBLE
+            activity.swipeContainer.isRefreshing = false
+            activity.swipeContainer.isEnabled = false
         } else {
             for (i in songList.indices) {
                 songList[i].num = i + 1
@@ -71,6 +73,7 @@ class SongViewHolder(songView: View) : RecyclerView.ViewHolder(songView) {
             deleteButton.visibility = INVISIBLE
             shuffleButton.visibility = VISIBLE
             songNum.text = song.num.toString()
+            activity.swipeContainer.isEnabled = true
         }
         songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (song.selected) R.color.card_color_selected else R.color.card_color))
         Glide.with(activity).load(song.imageUrl).placeholder(R.drawable.ic_placeholder).diskCacheStrategy(DiskCacheStrategy.RESOURCE)
@@ -89,7 +92,7 @@ class SongViewHolder(songView: View) : RecyclerView.ViewHolder(songView) {
                 songCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (song.selected) R.color.card_color_selected else R.color.card_color))
             } else {
                 selectable = true
-                activity.songAdapter.notifyItemRangeChanged(0, songList.size)
+                songAdapter.notifyItemRangeChanged(0, songList.size)
             }
             return@setOnLongClickListener true
         }
