@@ -93,9 +93,4 @@ fun showToast(text: String, context: Context) {
     currentToast?.show()
 }
 
-fun Beep() {
-    val toneGen1 = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-    toneGen1.startTone(ToneGenerator.TONE_CDMA_PIP, 150)
-}
-
 fun encodeURI(s: String): String = android.net.Uri.encode(s)
