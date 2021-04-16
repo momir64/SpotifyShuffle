@@ -2,8 +2,6 @@ package rs.moma.spotifyshuffle.global
 
 import android.content.Context
 import android.graphics.Rect
-import android.media.AudioManager
-import android.media.ToneGenerator
 import android.util.TypedValue
 import android.util.TypedValue.applyDimension
 import android.view.View
