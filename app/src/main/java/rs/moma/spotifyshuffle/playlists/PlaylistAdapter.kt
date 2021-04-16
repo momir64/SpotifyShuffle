@@ -33,7 +33,6 @@ import rs.moma.spotifyshuffle.global.getToken
 import rs.moma.spotifyshuffle.global.showToast
 import rs.moma.spotifyshuffle.songs.SongActivity
 
-
 var selectable = false
 
 class PlaylistAdapter(val playlistList: ArrayList<Playlist>, private val activity: PlaylistActivity) : RecyclerView.Adapter<PlaylistViewHolder>() {
@@ -65,6 +64,8 @@ class PlaylistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             checkButton.visibility = View.VISIBLE
             addButton.visibility = View.INVISIBLE
             arrow.visibility = View.INVISIBLE
+            activity.swipeContainer.isRefreshing = false
+            activity.swipeContainer.isEnabled = false
         } else {
             for (i in playlistAdapter.playlistList.indices) {
                 playlistAdapter.playlistList[i].num = i
@@ -75,6 +76,7 @@ class PlaylistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             checkButton.visibility = View.INVISIBLE
             addButton.visibility = View.VISIBLE
             arrow.visibility = View.VISIBLE
+            activity.swipeContainer.isEnabled = true
         }
         playlistCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (playlist.selected) R.color.card_color_selected else R.color.card_color))
         Glide.with(activity).load(playlist.imageUrl).placeholder(R.drawable.ic_placeholder).diskCacheStrategy(DiskCacheStrategy.RESOURCE)

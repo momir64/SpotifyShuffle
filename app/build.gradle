@@ -11,8 +11,8 @@ android {
         applicationId "rs.moma.spotifyshuffle"
         minSdkVersion 28
         targetSdkVersion 30
-        versionCode 5
-        versionName "Beta 5"
+        versionCode 6
+        versionName "Beta 5.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

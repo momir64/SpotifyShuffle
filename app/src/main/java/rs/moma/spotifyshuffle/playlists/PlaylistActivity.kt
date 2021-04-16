@@ -39,13 +39,13 @@ import rs.moma.spotifyshuffle.global.VerticalSpaceItemDecoration
 import rs.moma.spotifyshuffle.global.getToken
 import rs.moma.spotifyshuffle.global.preferencePath
 import rs.moma.spotifyshuffle.login.LoginActivity
+import rs.moma.spotifyshuffle.songs.Song
 import java.util.concurrent.Semaphore
 
-
 class PlaylistActivity : AppCompatActivity() {
+    lateinit var swipeContainer: SwipeRefreshLayout
     private lateinit var recyclerView: RecyclerView
     private lateinit var playlistAdapter: PlaylistAdapter
-    private lateinit var swipeContainer: SwipeRefreshLayout
     private var reLoad: Boolean = true
     private var itemVisibleCount = 0
 
@@ -133,11 +133,11 @@ class PlaylistActivity : AppCompatActivity() {
             dialog.getButton(BUTTON_POSITIVE).setOnClickListener {
                 val title = editText.text.toString().trim()
                 if (title.isNotEmpty()) {
-                    val songs = ArrayList<String>()
+                    val songs = ArrayList<Song>()
                     Thread {
                         for (playlist in playlists)
                             songs.addAll(getSongs(playlist.id))
-                        addSongs2Playlist(songs, createPlaylist(title))
+                        addSongs2Playlist(songs.distinctBy { listOf(it.title, it.artist, it.duration) } as ArrayList<Song>, createPlaylist(title))
                         reLoadPlaylists()
                     }.start()
                     dialog.dismiss()
@@ -148,11 +148,13 @@ class PlaylistActivity : AppCompatActivity() {
         }
     }
 
-    private fun addSongs2Playlist(songs: ArrayList<String>, playlistId: String) {
+    private fun addSongs2Playlist(songs: ArrayList<Song>, playlistId: String) {
         var offset = 0
         while (offset < songs.size) {
             val url = "https://api.spotify.com/v1/playlists/$playlistId/tracks"
-            val sublist = songs.subList(offset, (offset + 100).coerceAtMost(songs.size))
+            val sublist = ArrayList<String>()
+            for (i in offset until (offset + 100).coerceAtMost(songs.size))
+                sublist.add(songs[i].uri)
             val body = JSONObject().put("uris", JSONArray(sublist)).toString().toRequestBody("application/json; charset=utf-8".toMediaType())
             OkHttpClient().newCall(Request.Builder().url(url).addHeader("Authorization", "Bearer " + getToken(this)).post(body).build()).execute()
             offset += 100
@@ -170,8 +172,8 @@ class PlaylistActivity : AppCompatActivity() {
         return if (response.isSuccessful) JSONObject(response.body!!.string()).getString("id") else ""
     }
 
-    private fun getSongs(playlistId: String): ArrayList<String> {
-        val songs = ArrayList<String>()
+    private fun getSongs(playlistId: String): ArrayList<Song> {
+        val songs = ArrayList<Song>()
         var url = "https://api.spotify.com/v1/playlists/$playlistId/tracks?market=from_token"
         do {
             val request = Request.Builder().addHeader("Authorization", "Bearer " + getToken(this)).url(url).build()
@@ -181,8 +183,17 @@ class PlaylistActivity : AppCompatActivity() {
                 url = obj.getString("next")
                 val items = obj.getJSONArray("items")
                 for (i in 0 until items.length())
-                    if (!items.getJSONObject(i).isNull("track"))
-                        songs.add(items.getJSONObject(i).getJSONObject("track").getString("uri"))
+                    if (!items.getJSONObject(i).isNull("track")) {
+                        val track = items.getJSONObject(i).getJSONObject("track")
+                        val artists = track.getJSONArray("artists")
+                        var artist = artists.getJSONObject(0).getString("name")
+                        for (j in 1 until artists.length())
+                            artist += ", " + artists.getJSONObject(j).getString("name")
+                        songs.add(Song(track.getString("uri"),
+                                       track.getString("name"),
+                                       artist, "",
+                                       track.getInt("duration_ms")))
+                    }
             }
         } while (url != "null")
         return songs
