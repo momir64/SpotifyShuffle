@@ -34,10 +34,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import rs.moma.spotifyshuffle.R
-import rs.moma.spotifyshuffle.global.PreCachingLayoutManager
-import rs.moma.spotifyshuffle.global.VerticalSpaceItemDecoration
-import rs.moma.spotifyshuffle.global.getToken
-import rs.moma.spotifyshuffle.global.preferencePath
+import rs.moma.spotifyshuffle.global.*
 import rs.moma.spotifyshuffle.login.LoginActivity
 import rs.moma.spotifyshuffle.songs.Song
 import java.util.concurrent.Semaphore
@@ -101,7 +98,7 @@ class PlaylistActivity : AppCompatActivity() {
         selectable = false
         playlistAdapter.notifyItemRangeChanged(0, playlistAdapter.itemCount)
         if (playlists.isNotEmpty()) {
-            val dp = applyDimension(COMPLEX_UNIT_DIP, 1F, resources.displayMetrics)
+            val dp = dp2px(8, this).toFloat()
             val textInputLayout = TextInputLayout(this)
             val editText = TextInputEditText(textInputLayout.context)
             editText.setTextColor(resources.getColor(R.color.white, null))
@@ -109,16 +106,16 @@ class PlaylistActivity : AppCompatActivity() {
             editText.addTextChangedListener { textInputLayout.isErrorEnabled = false }
             editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             textInputLayout.boxBackgroundMode = TextInputLayout.BOX_BACKGROUND_OUTLINE
-            textInputLayout.setBoxCornerRadii(8 * dp, 8 * dp, 8 * dp, 8 * dp)
+            textInputLayout.setBoxCornerRadii(dp, dp, dp, dp)
             textInputLayout.setBoxBackgroundColorResource(R.color.card_color)
             val states = arrayOf(intArrayOf(android.R.attr.state_enabled))
             val colors = intArrayOf(resources.getColor(R.color.error, null))
             val colorList = ColorStateList(states, colors)
             textInputLayout.boxStrokeErrorColor = colorList
             textInputLayout.setErrorIconTintList(colorList)
-            textInputLayout.setPadding((24 * dp).toInt())
+            textInputLayout.setPadding(dp2px(24, this))
             textInputLayout.setErrorTextColor(colorList)
-            editText.setPadding((16 * dp).toInt())
+            editText.setPadding(dp2px(16, this))
             textInputLayout.addView(editText)
             editText.hint = "Playlist name"
             val dialog = MaterialAlertDialogBuilder(this, R.style.AlertDialogTheme)

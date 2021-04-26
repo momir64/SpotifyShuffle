@@ -19,7 +19,7 @@ const val CLIENT_ID = "8edbcacd9213442a99c413fc606e057a"
 const val REDIRECT_URI = "spotifyshuffle://callback"
 
 class PreCachingLayoutManager(private val context: Context) : LinearLayoutManager(context) {
-    override fun getExtraLayoutSpace(state: RecyclerView.State): Int = applyDimension(TypedValue.COMPLEX_UNIT_DIP, 80f, context.resources.displayMetrics).toInt() * 10
+    override fun getExtraLayoutSpace(state: RecyclerView.State): Int = dp2px(80, context) * 10
 }
 
 class VerticalSpaceItemDecoration(private val mVerticalSpaceHeight: Int) : RecyclerView.ItemDecoration() {
@@ -27,6 +27,14 @@ class VerticalSpaceItemDecoration(private val mVerticalSpaceHeight: Int) : Recyc
         if (parent.getChildAdapterPosition(view) == 0)
             outRect.top = mVerticalSpaceHeight
     }
+}
+
+fun dp2px(dp: Int, context: Context): Int {
+    return applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), context.resources.displayMetrics).toInt()
+}
+
+fun dp2px(dp: Double, context: Context): Int {
+    return applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), context.resources.displayMetrics).toInt()
 }
 
 fun getToken(context: Context): String {

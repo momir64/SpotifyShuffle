@@ -16,4 +16,5 @@
     <string name="add_playlist">Add playlist</string>
     <string name="check_playlist">Check playlist</string>
     <string name="logout">Logout</string>
+    <string name="copy_songs">Copy songs</string>
 </resources>

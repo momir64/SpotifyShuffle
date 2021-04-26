@@ -4,31 +4,23 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipe_container"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/songs_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
+        android:overScrollMode="never"
+        android:scrollbars="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/playlistTitle">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/songs_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:overScrollMode="never" />
-
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+        app:layout_constraintTop_toBottomOf="@+id/playlist_title" />
 
     <TextView
-        android:id="@+id/playlistTitle"
+        android:id="@+id/playlist_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="64dp"
+        android:layout_marginStart="55dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="64dp"
+        android:layout_marginEnd="55dp"
         android:ellipsize="end"
         android:fontFamily="@font/gothammedium"
         android:gravity="center"
@@ -77,7 +69,20 @@
         android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_delete_forever" />
+        app:srcCompat="@drawable/ic_delete" />
+
+    <ImageButton
+        android:id="@+id/copy_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/copy_songs"
+        android:padding="8dp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toStartOf="@id/delete_button"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_copy" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/done_button"
@@ -87,13 +92,14 @@
         android:layout_marginBottom="16dp"
         android:clickable="true"
         android:contentDescription="@string/done"
-        app:backgroundTint="@color/gray_100"
+        app:backgroundTint="@color/green"
         app:borderWidth="0dp"
         app:elevation="2dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:maxImageSize="30dp"
         app:pressedTranslationZ="12dp"
         app:srcCompat="@drawable/ic_done_all"
-        app:tint="@color/green" />
+        app:tint="@color/black" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

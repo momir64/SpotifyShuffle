@@ -3,16 +3,13 @@ package rs.moma.spotifyshuffle.playlists
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.os.Bundle
 import android.text.InputType
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.*
-import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
 import androidx.core.widget.addTextChangedListener
@@ -20,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.Target
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -29,6 +27,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import rs.moma.spotifyshuffle.R
+import rs.moma.spotifyshuffle.global.dp2px
 import rs.moma.spotifyshuffle.global.getToken
 import rs.moma.spotifyshuffle.global.showToast
 import rs.moma.spotifyshuffle.songs.SongActivity
@@ -50,7 +49,7 @@ class PlaylistAdapter(val playlistList: ArrayList<Playlist>, private val activit
 class PlaylistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private var playlistTitle = itemView.findViewById<TextView>(R.id.playlist_text)
     private var playlistImage = itemView.findViewById<ImageView>(R.id.playlist_image)
-    private var playlistCard = itemView.findViewById<CardView>(R.id.playlist_card)
+    private var playlistCard = itemView.findViewById<MaterialCardView>(R.id.playlist_card)
 
     fun bindData(playlist: Playlist, activity: PlaylistActivity, playlistAdapter: PlaylistAdapter) {
         val logoutButton = activity.findViewById<ImageButton>(R.id.logout_button)
@@ -79,6 +78,7 @@ class PlaylistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             activity.swipeContainer.isEnabled = true
         }
         playlistCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (playlist.selected) R.color.card_color_selected else R.color.card_color))
+        playlistCard.strokeWidth = if (playlist.selected) dp2px(1.5, activity) else 0
         Glide.with(activity).load(playlist.imageUrl).placeholder(R.drawable.ic_placeholder).diskCacheStrategy(DiskCacheStrategy.RESOURCE)
             .override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).dontTransform().into(playlistImage)
         playlistTitle.text = playlist.title
@@ -86,21 +86,22 @@ class PlaylistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             if (selectable) {
                 playlist.selected = !playlist.selected
                 playlistCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (playlist.selected) R.color.card_color_selected else R.color.card_color))
+                playlistCard.strokeWidth = if (playlist.selected) dp2px(1.5, activity) else 0
             } else {
-                val intent = Intent(activity, SongActivity::class.java)
-                val bundle = Bundle()
-                bundle.putString("playlistTitle", playlist.title)
-                bundle.putString("playlistId", playlist.id)
-                intent.putExtras(bundle)
-                activity.startActivity(intent)
+                activity.startActivity(Intent(activity, SongActivity::class.java)
+                                           .putExtra("playlistTitle", playlist.title)
+                                           .putExtra("playlistId", playlist.id)
+                                           .putExtra("playlistsTitles", playlistAdapter.playlistList.map { it.title }.toTypedArray())
+                                           .putExtra("playlistsIds", playlistAdapter.playlistList.map { it.id }.toTypedArray()))
             }
         }
         playlistCard.setOnLongClickListener {
             if (selectable) {
                 playlist.selected = !playlist.selected
                 playlistCard.setCardBackgroundColor(ContextCompat.getColor(activity, if (playlist.selected) R.color.card_color_selected else R.color.card_color))
+                playlistCard.strokeWidth = if (playlist.selected) dp2px(1.5, activity) else 0
             } else {
-                val dp = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1F, activity.resources.displayMetrics)
+                val dp = dp2px(8, activity).toFloat()
                 val textInputLayout = TextInputLayout(activity)
                 val editText = TextInputEditText(textInputLayout.context)
                 editText.setTextColor(activity.resources.getColor(R.color.white, null))
@@ -108,16 +109,16 @@ class PlaylistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
                 editText.addTextChangedListener { textInputLayout.isErrorEnabled = false }
                 editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
                 textInputLayout.boxBackgroundMode = TextInputLayout.BOX_BACKGROUND_OUTLINE
-                textInputLayout.setBoxCornerRadii(8 * dp, 8 * dp, 8 * dp, 8 * dp)
+                textInputLayout.setBoxCornerRadii(dp, dp, dp, dp)
                 textInputLayout.setBoxBackgroundColorResource(R.color.card_color)
                 val colors = intArrayOf(activity.resources.getColor(R.color.error, null))
                 val states = arrayOf(intArrayOf(android.R.attr.state_enabled))
                 val colorList = ColorStateList(states, colors)
                 textInputLayout.boxStrokeErrorColor = colorList
                 textInputLayout.setErrorIconTintList(colorList)
-                textInputLayout.setPadding((24 * dp).toInt())
+                textInputLayout.setPadding(dp2px(24, activity))
                 textInputLayout.setErrorTextColor(colorList)
-                editText.setPadding((16 * dp).toInt())
+                editText.setPadding(dp2px(16, activity))
                 textInputLayout.addView(editText)
                 editText.setText(playlist.title)
                 editText.hint = "Playlist name"
