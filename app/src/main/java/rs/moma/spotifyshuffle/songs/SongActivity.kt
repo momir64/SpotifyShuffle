@@ -40,11 +40,11 @@ import java.util.Collections.shuffle
 import java.util.concurrent.Semaphore
 import kotlin.collections.ArrayList
 
-
 class SongActivity : AppCompatActivity() {
     private lateinit var playlistId: String
     private lateinit var playlistTitle: String
     private lateinit var songAdapter: SongAdapter
+    private lateinit var infoAdapter: InfoAdapter
     private lateinit var recyclerView: RecyclerView
     lateinit var songTouchHelper: ItemTouchHelper
     private var semaphore = Semaphore(1)
@@ -63,7 +63,8 @@ class SongActivity : AppCompatActivity() {
         recyclerView.layoutManager = PreCachingLayoutManager(this)
         recyclerView.addItemDecoration(VerticalSpaceItemDecoration(applyDimension(COMPLEX_UNIT_DIP, 16f, resources.displayMetrics).toInt()))
         songAdapter = SongAdapter(this)
-        recyclerView.adapter = songAdapter
+        infoAdapter = InfoAdapter()
+        recyclerView.adapter = ConcatAdapter(infoAdapter, songAdapter)
         songTouchHelper = ItemTouchHelper(SongTouchHelperCallback(songAdapter))
         songTouchHelper.attachToRecyclerView(recyclerView)
         recyclerView.doOnLayout {
@@ -125,11 +126,18 @@ class SongActivity : AppCompatActivity() {
                 dialog2.getButton(BUTTON_POSITIVE).setOnClickListener {
                     val title = editText.text.toString().trim()
                     if (title.isNotEmpty()) {
-                        Thread { addSongs2Playlist(songAdapter.songList.filter { it.selected } as ArrayList<Song>, createPlaylist(title)) }.start()
-                        selectable = false
-                        movePlaylistTitle()
-                        songAdapter.notifyItemRangeChanged(0, songAdapter.itemCount)
-                        dialog2.dismiss()
+                        Thread {
+                            if (songAdapter.songList.any { it.selected })
+                                addSongs2Playlist(songAdapter.songList.filter { it.selected } as ArrayList<Song>, createPlaylist(title))
+                            else
+                                addSongs2Playlist(songAdapter.songList, createPlaylist(title))
+                            runOnUiThread {
+                                selectable = false
+                                movePlaylistTitle()
+                                songAdapter.notifyItemRangeChanged(0, songAdapter.itemCount)
+                                dialog2.dismiss()
+                            }
+                        }.start()
                     } else
                         textInputLayout.error = "Playlist name can't be empty!"
                 }
@@ -141,10 +149,12 @@ class SongActivity : AppCompatActivity() {
                                           (intent.getStringArrayExtra("playlistsIds") as Array<String>)[i - 1])
                     else
                         addSongs2Playlist(songAdapter.songList, (intent.getStringArrayExtra("playlistsIds") as Array<String>)[i - 1])
+                    runOnUiThread {
+                        selectable = false
+                        movePlaylistTitle()
+                        songAdapter.notifyItemRangeChanged(0, songAdapter.itemCount)
+                    }
                 }.start()
-                selectable = false
-                movePlaylistTitle()
-                songAdapter.notifyItemRangeChanged(0, songAdapter.itemCount)
             }
         }
     }
@@ -248,6 +258,9 @@ class SongActivity : AppCompatActivity() {
                         i++
                     }
                 }
+                infoAdapter.totalCount = songList.size
+                infoAdapter.totalLength = songList.sumOf { it.duration }
+                runOnUiThread { infoAdapter.notifyItemChanged(0) }
             }
         }
     }
@@ -305,12 +318,17 @@ class SongActivity : AppCompatActivity() {
                                 songs.add(Song(track.getString("uri"),
                                                track.getString("name"),
                                                artist,
-                                               image))
+                                               image,
+                                               track.getInt("duration_ms")))
                                 if (++x == itemVisibleCount || (i + 1 == items.length() && x < itemVisibleCount))
                                     preloadFirst(x, songs)
                             }
                         }
+                    infoAdapter.totalCount += songs.size
+                    infoAdapter.totalLength += songs.sumOf { it.duration }
+                    infoAdapter.visible = true
                     songAdapter.songList.addAll(songs)
+                    runOnUiThread { infoAdapter.notifyDataSetChanged() }
                     runOnUiThread { songAdapter.notifyItemRangeInserted(songAdapter.itemCount - songs.size, songs.size) }
                 }
             } while (url != "null")

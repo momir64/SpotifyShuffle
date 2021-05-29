@@ -17,4 +17,20 @@
     <string name="check_playlist">Check playlist</string>
     <string name="logout">Logout</string>
     <string name="copy_songs">Copy songs</string>
+    <plurals name="total_count">
+        <item quantity="one">"Total count:\n%1$d song"</item>
+        <item quantity="other">"Total count:\n%1$d songs"</item>
+    </plurals>
+    <plurals name="total_length0">
+        <item quantity="one">"Total length:\n%1$d minute"</item>
+        <item quantity="other">"Total length:\n%1$d minutes"</item>
+    </plurals>
+    <plurals name="total_length1">
+        <item quantity="one">"Total length:\n%1$d hour %2$d minute"</item>
+        <item quantity="other">"Total length:\n%1$d hour %2$d minutes"</item>
+    </plurals>
+    <plurals name="total_length">
+        <item quantity="one">"Total length:\n%1$d hours %2$d minute"</item>
+        <item quantity="other">"Total length:\n%1$d hours %2$d minutes"</item>
+    </plurals>
 </resources>
