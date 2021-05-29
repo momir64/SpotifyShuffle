@@ -113,7 +113,7 @@ class SongTouchHelperCallback(private val adapter: SongAdapter) : ItemTouchHelpe
     override fun isLongPressDragEnabled(): Boolean = false
     override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
     override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-        adapter.moveSong(viewHolder.adapterPosition, target.adapterPosition)
+        adapter.moveSong(viewHolder.bindingAdapterPosition, target.bindingAdapterPosition)
         return true
     }
 }
